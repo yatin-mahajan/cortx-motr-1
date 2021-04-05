@@ -1620,6 +1620,7 @@ int m0_client_init(struct m0_client **m0c_p,
 					0xaddbf11e, true, true, size);
 	}
 	/* publish the allocated client instance */
+	m0_atomic64_set(&m0c->m0c_inflight_cnt, 0);
 	*m0c_p = m0c;
 	return M0_RC(rc);
 

@@ -581,6 +581,7 @@ struct m0_client {
 #endif
 
 	struct m0_htable                        m0c_rm_ctxs;
+	struct m0_atomic64                      m0c_inflight_cnt;
 };
 
 /** CPUs semaphore - to control CPUs usage by parity calcs. */

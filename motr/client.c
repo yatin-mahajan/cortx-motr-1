@@ -794,6 +794,7 @@ M0_INTERNAL int m0_op_init(struct m0_op *op,
 			   struct m0_entity *entity)
 {
 	struct m0_sm_group *grp;
+	struct m0_client   *cinst;
 
 	M0_ENTRY();
 
@@ -804,6 +805,10 @@ M0_INTERNAL int m0_op_init(struct m0_op *op,
 	M0_PRE(conf != NULL);
 	M0_PRE(m0_sm_conf_is_initialized(conf));
 	M0_ASSERT(ergo(entity != NULL, entity_invariant_full(entity)));
+
+	cinst = m0__entity_instance(entity);
+	if (0 && cinst == NULL ) 
+		M0_ENTRY();
 
 	/* Initialise the operation. */
 	m0_op_bob_init(op);
@@ -834,6 +839,7 @@ void m0_op_fini(struct m0_op *op)
 {
 	struct m0_op_common        *oc;
 	struct m0_sm_group         *grp;
+	struct m0_client           *cinst;
 
 	M0_ENTRY();
 
@@ -842,6 +848,9 @@ void m0_op_fini(struct m0_op *op)
 					  M0_OS_STABLE,
 					  M0_OS_FAILED)));
 	M0_PRE(op->op_size >= sizeof *oc);
+	cinst = m0__entity_instance(op->op_entity);
+	if (0 && cinst == NULL ) 
+		M0_ENTRY();
 
 	oc = bob_of(op, struct m0_op_common, oc_op, &oc_bobtype);
 	if (oc->oc_cb_fini != NULL)
