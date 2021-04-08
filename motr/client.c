@@ -806,10 +806,6 @@ M0_INTERNAL int m0_op_init(struct m0_op *op,
 	M0_PRE(m0_sm_conf_is_initialized(conf));
 	M0_ASSERT(ergo(entity != NULL, entity_invariant_full(entity)));
 
-	cinst = m0__entity_instance(entity);
-	if (0 && cinst == NULL ) 
-		M0_ENTRY();
-
 	/* Initialise the operation. */
 	m0_op_bob_init(op);
 	op->op_entity = entity;
@@ -825,6 +821,12 @@ M0_INTERNAL int m0_op_init(struct m0_op *op,
 
 	M0_ASSERT(IS_IN_ARRAY(op->op_code, opcount));
 	op->op_count = opcount[op->op_code]++; /* XXX lock! */
+	if (entity != NULL && entity->en_realm != NULL ) {
+		cinst = m0__entity_instance(entity);
+		if (0 && cinst != NULL)
+			M0_LOG(M0_DEBUG, "inflight client count = %"PRIu64" ", m0_atomic64_get(&cinst->m0c_inflight_cnt));
+	}
+
 
 	/* m0_sm_invariant must be checked under sm_group lock. */
 	m0_sm_group_lock(grp);
@@ -848,9 +850,12 @@ void m0_op_fini(struct m0_op *op)
 					  M0_OS_STABLE,
 					  M0_OS_FAILED)));
 	M0_PRE(op->op_size >= sizeof *oc);
-	cinst = m0__entity_instance(op->op_entity);
-	if (0 && cinst == NULL ) 
-		M0_ENTRY();
+	if (op->op_entity != NULL && op->op_entity->en_realm != NULL) {
+		cinst = m0__entity_instance(op->op_entity);
+		M0_LOG(M0_DEBUG, "inflight client count = %"PRIu64" ", m0_atomic64_get(&cinst->m0c_inflight_cnt));
+                /* M0_LOG(M0_DEBUG, "allocated=%"PRIu64" cumulative_alloc= ",
+		                m0_atomic64_get(&cinst->m0c_inflight_cnt)); */
+	}
 
 	oc = bob_of(op, struct m0_op_common, oc_op, &oc_bobtype);
 	if (oc->oc_cb_fini != NULL)
