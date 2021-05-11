@@ -25,7 +25,7 @@
 #
 # Global vars
 #
-
+set -xeu
 # constants
 readonly PROG_NAME=$(basename $0)
 readonly SELF=$(readlink -f $0)
@@ -316,12 +316,13 @@ create_loop_images()
 setup_loop_devices()
 {
     local imgs_cnt=$pool_width
-
+    i=0
     if $cas_enabled ; then
         imgs_cnt=$((pool_width + ipool_width))
     fi
 
     log "Setting up loop devices"
+    (( i++ ))
     for i in $(seq $imgs_cnt) ; do
         local img_file="$loop_img_dir/disk$i.img"
         local free_loopdev=$(losetup -f)

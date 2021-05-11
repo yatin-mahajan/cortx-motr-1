@@ -19,9 +19,10 @@
 #
 
 # Get local address and other parameters to start services
-modprobe lnet &>> /dev/null
-lctl network up &>> /dev/null
-LOCAL_NID=`lctl list_nids | head -1`
+#modprobe lnet &>> /dev/null
+#lctl network up &>> /dev/null
+#LOCAL_NID=`lctl list_nids | head -1`
+LOCAL_NID="192.168.222.207@tcp"
 if [ X$LOCAL_NID == X ]; then
 	echo "lnet is not up"
 	exit
