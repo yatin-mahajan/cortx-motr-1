@@ -17,6 +17,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
+
 M0_SRC_DIR=`readlink -f ${BASH_SOURCE[0]}`
 M0_SRC_DIR=${M0_SRC_DIR%/*/*/*/*}
 
@@ -36,7 +37,7 @@ MOTR_CTL_MODULE=m0ctl #debugfs interface to control m0tr at runtime
 MOTR_MODULE_TRACE_MASK='!all'
 MOTR_TRACE_PRINT_CONTEXT=short
 MOTR_TRACE_LEVEL=call+
-
+lnet_nid="192.168.222.207@tcp"
 #user-space tracing parameters
 export M0_TRACE_IMMEDIATE_MASK="!all"
 export M0_TRACE_LEVEL=call+
@@ -138,8 +139,8 @@ unload_kernel_module()
 load_kernel_module()
 {
 	modprobe lnet &>> /dev/null
-	lctl network up &>> /dev/null
-	lnet_nid=`sudo lctl list_nids | head -1`
+	#lctl network up &>> /dev/null
+	#lnet_nid=`sudo lctl list_nids | head -1`
 	server_nid=${server_nid:-$lnet_nid}
 
 	# see if CONFD_EP was not prefixed with lnet_nid to the moment
@@ -214,7 +215,19 @@ prepare()
 {
 	modload_galois >& /dev/null
 	echo 8 > /proc/sys/kernel/printk
-	load_kernel_module || return $?
+	#load_kernel_module || return $?
+	server_nid=${server_nid:-$lnet_nid}
+
+        # see if CONFD_EP was not prefixed with lnet_nid to the moment
+        # and pad it in case it was not
+        if [ "${CONFD_EP#$lnet_nid:}" = "$CONFD_EP" ]; then
+                CONFD_EP=$lnet_nid:$CONFD_EP
+        fi
+
+        # Client end point (m0tr module local_addr)
+        # last component in this addr will be generated and filled in m0tr.
+        LADDR="$lnet_nid:12345:33:"
+
 	sysctl -w vm.max_map_count=30000000 || return $?
 }
 
@@ -654,8 +667,8 @@ function build_conf()
 }
 
 service_eps_get()
-{
-	local lnet_nid=`sudo lctl list_nids | head -1`
+{ 
+	#local lnet_nid=`sudo lctl list_nids | head -1`
 	local service_eps
 
 	if [ $SINGLE_NODE -eq 1 ] ; then
@@ -682,7 +695,7 @@ MOTR_CLIENT_ONLY=0
 
 service_eps_with_m0t1fs_get()
 {
-	local lnet_nid=`sudo lctl list_nids | head -1`
+	#local lnet_nid=`sudo lctl list_nids | head -1`
 	local service_eps=$(service_eps_get)
 
 	# If client only, we don't have m0t1fs nid.
@@ -696,7 +709,8 @@ service_eps_with_m0t1fs_get()
 
 service_cas_eps_with_m0tifs_get()
 {
-	local lnet_nid=`sudo lctl list_nids | head -1`
+	#local lnet_nid=`sudo lctl list_nids | head -1`
+
 	local service_eps=(
 		"$lnet_nid:${IOSEP[0]}"
 		"$lnet_nid:${IOSEP[1]}"
@@ -789,7 +803,7 @@ send_ha_events_default()
 	local state=$2
 
 	# Use default endpoints
-	local lnet_nid=`sudo lctl list_nids | head -1`
+	#local lnet_nid=`sudo lctl list_nids | head -1`
 	local ha_ep="$lnet_nid:$HA_EP"
 	local local_ep="$lnet_nid:$M0HAM_CLI_EP"
 

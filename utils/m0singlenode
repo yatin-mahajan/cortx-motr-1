@@ -186,8 +186,8 @@ start_singlenode()
     # workaround is to re-load lnet modules, which is done by 'restart'.
     # If lnet module is already loaded, there is no need to reload it,
     # just make sure the lnet.service is started.
-    lsmod | grep -q lnet && systemctl start lnet || {
-        log 'Starting LNet'; systemctl restart lnet; }
+    #lsmod | grep -q lnet && systemctl start lnet || {
+     #   log 'Starting LNet'; systemctl restart lnet; }
 
     log 'Starting motr-singlenode services'
     systemctl start motr-singlenode &

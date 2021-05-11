@@ -19,7 +19,7 @@
 #
 
 
-#set -x
+set -x
 
 # This script starts and stops motr singlenode and performs some Object and
 # KV Litmus tests.
@@ -125,7 +125,8 @@ stop_singlenode()
 
 ip_generate()
 {
-	IP=$(lctl list_nids | cut  -f 1 -d' ' | head -n 1)
+	#IP=$(lctl list_nids | cut  -f 1 -d' ' | head -n 1)
+	IP="192.168.222.207@tcp"
 	if [[ ! ${IP} ]]; then
 		(>&2 echo 'error! m0singlenode not running.')
 		(>&2 echo 'start m0singlenode')
