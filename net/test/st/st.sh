@@ -18,7 +18,7 @@
 # please email opensource@seagate.com or cortx-questions@seagate.com.
 #
 
-set -eu
+set -xeu
 
 # Next lines are useful for ST scripts debugging
 # set -eux
@@ -47,15 +47,15 @@ unload_all() {
 	modunload
 	modunload_galois
 }
-trap unload_all EXIT
+#trap unload_all EXIT
 
 if [[ "$trans" = "lnet" ]]; then
 	modprobe_lnet
 	lctl network up > /dev/null
 fi
 
-modload_galois
-modload || exit $?
+#modload_galois
+#modload || exit $?
 
 sandbox_init
 export TEST_RUN_TIME=5

@@ -29,15 +29,15 @@
 readonly PROG_NAME=$(basename $0)
 readonly self=$(readlink -f $0)
 readonly base_dir=$(dirname $self)
+    #motr-kernel
+    #motr-client
 readonly singlenonde_services='
-    motr-kernel
     motr-server-ha
     motr-server-confd
     motr-server@mds
     motr-server@ios1
     motr-server@cas1
     motr
-    motr-client
     motr-singlenode
 '
 
@@ -234,8 +234,8 @@ stop_singlenode()
 
     local status_col=57
 
-    for s in motr-singlenode motr-client motr-server@cas1 motr-server@ios1 \
-        motr-server@mds motr-server-confd motr-server-ha motr motr-kernel
+    for s in motr-singlenode motr-server@cas1 motr-server@ios1 \
+        motr-server@mds motr-server-confd motr-server-ha motr
     do
         logn "  waiting for $s  "
 
@@ -310,17 +310,17 @@ singlenode_status()
     echo ' LNet Network ID:       ' $lnet_nid
 
     echo
-    echo '### Kernel --------------------------------------'
+    #echo '### Kernel --------------------------------------'
 
-    local kernel=$(get_param_of motr-kernel ActiveState)
-    case $kernel in
-        active)   color=$GREEN ; atime=$(get_param_of motr-kernel ActiveEnterTimestamp)  ;;
-        failed)   color=$RED   ; atime=$(get_param_of motr-kernel InactiveEnterTimestamp) ;;
-        inactive) color=$NC    ; atime= ;;
-        *)        color=$NC    ; atime= ;;
-    esac
-    echo " motr-kernel             $color$kernel$NC    $atime"
-    lsmod | grep m0 | awk '{ print "   " $LN }'
+    #local kernel=$(get_param_of motr-kernel ActiveState)
+    #case $kernel in
+     #   active)   color=$GREEN ; atime=$(get_param_of motr-kernel ActiveEnterTimestamp)  ;;
+      #  failed)   color=$RED   ; atime=$(get_param_of motr-kernel InactiveEnterTimestamp) ;;
+       # inactive) color=$NC    ; atime= ;;
+       # *)        color=$NC    ; atime= ;;
+    #esac
+    #echo " motr-kernel             $color$kernel$NC    $atime"
+    #lsmod | grep m0 | awk '{ print "   " $LN }'
 
     echo
     echo '### Servers -------------------------------------'

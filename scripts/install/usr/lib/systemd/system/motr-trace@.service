@@ -19,8 +19,10 @@
 
 [Unit]
 Description=Motr trace daemon for %i
-After=motr-kernel.service motr-server@%i.service m0d@%i.service
-PartOf=motr-kernel.service motr-server@%i.service m0d@%i.service
+#After=motr-kernel.service motr-server@%i.service m0d@%i.service
+After=motr-server@%i.service m0d@%i.service
+#PartOf=motr-kernel.service motr-server@%i.service m0d@%i.service
+PartOf=motr-server@%i.service m0d@%i.service
 
 [Service]
 Type=simple

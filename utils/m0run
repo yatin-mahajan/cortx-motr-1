@@ -365,7 +365,7 @@ mkdir -p "$rundir"
 log "cd '$rundir'"
 cd "$rundir"
 
-load_modules
+#load_modules
 
 # enable core dumps
 ulimit -c unlimited

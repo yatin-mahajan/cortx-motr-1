@@ -19,9 +19,9 @@
 
 [Unit]
 Description=Motr server helper
-Requires=motr-kernel.service
-After=motr-kernel.service
-Before=motr-client.service
+#Requires=motr-kernel.service
+#After=motr-kernel.service
+#Before=motr-client.service
 PartOf=motr-singlenode.service
 
 [Service]

@@ -19,8 +19,10 @@
 
 [Unit]
 Description=Motr singlenode configuration
-Requires=motr.service motr-client.service
-After=motr.service motr-client.service
+Requires=motr.service
+#motr-client.service
+After=motr.service
+#motr-client.service
 
 [Service]
 Type=oneshot
