@@ -67,8 +67,8 @@ stop() {
 }
 
 _init() {
-    lnet_up
-    m0_modules_insert
+#    lnet_up
+#    m0_modules_insert
     sandbox_init # changes current directory to $SANDBOX_DIR
     mkdir mnt
 }
@@ -76,7 +76,7 @@ _init() {
 _fini() {
     rmdir mnt
     sandbox_fini ${1:-}
-    m0_modules_remove
+#    m0_modules_remove
 }
 
 confdb() {
@@ -217,8 +217,8 @@ Usage: ${0##*/} [COMMAND]
 
 Supported commands:
   run      run system tests (default command)
-  insmod   insert Motr kernel modules: m0tr.ko, galois.ko
-  rmmod    remove Motr kernel modules
+  #insmod   insert Motr kernel modules: m0tr.ko, galois.ko
+  #rmmod    remove Motr kernel modules
   sstart   start Motr user-space services
   sstop    stop Motr user-space services
   help     display this help and exit

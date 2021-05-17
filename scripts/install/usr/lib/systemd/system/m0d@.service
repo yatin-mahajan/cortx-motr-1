@@ -19,9 +19,9 @@
 
 [Unit]
 Description=m0d helper for %i service-FID
-Requires=motr-kernel.service
-Wants=motr-trace@%i.service
-After=motr-kernel.service
+#Requires=motr-kernel.service
+#Wants=motr-trace@%i.service
+#After=motr-kernel.service
 Before=motr-trace@%i.service
 
 [Service]

@@ -19,8 +19,8 @@
 
 [Unit]
 Description=Motr mkfs helper for %i service
-Requires=motr-kernel.service
-After=motr-kernel.service
+#Requires=motr-kernel.service
+#After=motr-kernel.service
 Before=motr-server@%i.service
 
 [Service]

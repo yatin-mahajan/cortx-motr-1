@@ -19,10 +19,11 @@
 
 [Unit]
 Description=Motr server helper for confd service
-Requires=motr-kernel.service
+#Requires=motr-kernel.service
 Wants=motr-trace@confd.service
-After=motr-kernel.service
-Before=motr-trace@confd.service motr-server@.service motr-client.service
+#After=motr-kernel.service
+Before=motr-trace@confd.service motr-server@.service 
+#motr-client.service
 PartOf=motr.service
 
 [Service]
