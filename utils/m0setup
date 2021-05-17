@@ -316,13 +316,11 @@ create_loop_images()
 setup_loop_devices()
 {
     local imgs_cnt=$pool_width
-    i=0
     if $cas_enabled ; then
         imgs_cnt=$((pool_width + ipool_width))
     fi
 
     log "Setting up loop devices"
-    (( i++ ))
     for i in $(seq $imgs_cnt) ; do
         local img_file="$loop_img_dir/disk$i.img"
         local free_loopdev=$(losetup -f)
@@ -331,6 +329,9 @@ setup_loop_devices()
         [[ -e $img_file ]] ||
             die "image file '$img_file' doesn't exist"
         losetup $free_loopdev "$img_file"
+	if [[ $? -eq 0 ]]; then
+		exit
+	fi
     done
 }
 

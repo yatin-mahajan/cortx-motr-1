@@ -248,7 +248,13 @@ m0_get_nodes()
 # Return lnet NID of a node
 #   @param  $1  optional name of a node, for which the query is performed, if
 #               ommited, then value is returned for current node
-m0_get_lnet_nid()
+m0_get_lnet_nid() {
+
+   local lnid
+   lnid=`ip addr show eth0|grep inet| head -1|awk '{print $2}'|cut -d '/' -f1`
+   echo $lnid
+}
+m0_get_lnet_nid_()
 {
     local node=$1
 

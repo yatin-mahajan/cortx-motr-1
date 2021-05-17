@@ -217,8 +217,8 @@ Usage: ${0##*/} [COMMAND]
 
 Supported commands:
   run      run system tests (default command)
-  #insmod   insert Motr kernel modules: m0tr.ko, galois.ko
-  #rmmod    remove Motr kernel modules
+  insmod   insert Motr kernel modules: m0tr.ko, galois.ko
+  rmmod    remove Motr kernel modules
   sstart   start Motr user-space services
   sstop    stop Motr user-space services
   help     display this help and exit
@@ -233,8 +233,8 @@ EOF
 
 case "${1:-}" in
     run|'') ;;
-    insmod) lnet_up; m0_modules_insert; exit;;
-    rmmod) m0_modules_remove; exit;;
+    insmod) exit;; #lnet_up; m0_modules_insert; exit;;
+    rmmod) exit;; #m0_modules_remove; exit;;
     sstart) start; exit;;
     sstop) services_stop; sleep 3; _fini; exit;;
     help) usage; exit;;
