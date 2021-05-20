@@ -37,7 +37,8 @@ MOTR_CTL_MODULE=m0ctl #debugfs interface to control m0tr at runtime
 MOTR_MODULE_TRACE_MASK='!all'
 MOTR_TRACE_PRINT_CONTEXT=short
 MOTR_TRACE_LEVEL=call+
-lnet_nid="192.168.222.207@tcp"
+lnet_nid=`ip addr show eth0|grep inet| head -1|awk '{print $2}'|cut -d '/' -f1`
+lnet_nid=$lnet_nid@tcp
 #user-space tracing parameters
 export M0_TRACE_IMMEDIATE_MASK="!all"
 export M0_TRACE_LEVEL=call+

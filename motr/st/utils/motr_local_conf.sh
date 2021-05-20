@@ -22,7 +22,9 @@
 #modprobe lnet &>> /dev/null
 #lctl network up &>> /dev/null
 #LOCAL_NID=`lctl list_nids | head -1`
-LOCAL_NID="192.168.222.207@tcp"
+LOCAL_NID=`ip addr show eth0|grep inet| head -1|awk '{print $2}'|cut -d '/' -f1`
+LOCAL_NID=$LOCAL_NID@tcp
+
 if [ X$LOCAL_NID == X ]; then
 	echo "lnet is not up"
 	exit
