@@ -25,7 +25,7 @@
 #
 # Global vars
 #
-set -xeu
+#set -eu
 # constants
 readonly PROG_NAME=$(basename $0)
 readonly SELF=$(readlink -f $0)
@@ -335,9 +335,6 @@ setup_loop_devices()
         [[ -e $img_file ]] ||
             die "image file '$img_file' doesn't exist"
         losetup $free_loopdev "$img_file"
-	if [[ $? -eq 0 ]]; then
-		exit
-	fi
     done
 }
 
