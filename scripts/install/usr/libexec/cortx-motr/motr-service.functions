@@ -251,8 +251,8 @@ m0_get_nodes()
 m0_get_lnet_nid() {
 
    local lnid
-   lnid=`ip addr show eth0|grep inet| head -1|awk '{print $2}'|cut -d '/' -f1`
-   echo $lnid@tcp
+   lnid=`ip addr show eth1|grep inet| head -1|awk '{print $2}'|cut -d '/' -f1`
+   echo "$lnid@tcp"
 }
 m0_get_lnet_nid_()
 {
