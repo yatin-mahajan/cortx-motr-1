@@ -6,6 +6,7 @@
 # configure options
 %define with_linux  %( test -n "$kernel_src" && echo "--with-linux=$kernel_src" )
 %define with_lustre %( test -n "$lustre_src" && echo "--with-lustre=$lustre_src" )
+#%define with_lustre %(echo "--with-lustre=no")
 
 # kernel version.
 %define raw_kernel_ver %(
@@ -45,9 +46,9 @@
 %define  configure_opts  %{configure_release_opts} %{?configure_cassandra_opts}
 %endif
 
-Name:           @PACKAGE@
-Version:        @PACKAGE_VERSION@
-Release:        %{build_num}_@GIT_REV_ID_RPM@_%{kernel_ver}%{?dist}
+Name:           cortx-motr
+Version:        2.0.0
+Release:        %{build_num}_git97a5646_%{kernel_ver}%{?dist}
 Summary:        CORTX Motr
 Group:          System Environment/Base
 License:        Seagate
@@ -86,8 +87,10 @@ BuildRequires:  perl-File-Find-Rule
 BuildRequires:  perl-IO-All
 BuildRequires:  perl-File-Slurp
 BuildRequires:  perl-YAML-LibYAML
+%if "%{with_lustre}" == "--with-lustrs=yes"
 BuildRequires:  kernel-devel = %{kernel_ver_requires}
 BuildRequires:  %{lustre_devel}
+%endif
 BuildRequires:  libuuid-devel
 BuildRequires:  binutils-devel
 %if %{rhel} <= 7
@@ -110,8 +113,10 @@ BuildRequires:  libcassandra
 BuildRequires:  libuv
 %endif
 
+%if "%{with_lustre}" == "--with-lustrs=yes"
 Requires:       kernel = %{kernel_ver_requires}
 Requires:       %{lustre}
+%endif
 Requires:       libaio
 Requires:       libyaml
 Requires:       gdb
@@ -141,7 +146,7 @@ CORTX Motr runtime
 
 %package devel
 Summary: CORTX Motr include headers
-Group: Development/Kernel
+Group: Development
 Provides: %{name}-devel = %{version}-%{release}
 # backward compatibility with legacy product name:
 Obsoletes: mero-devel
@@ -154,8 +159,10 @@ Requires: libuuid-devel
 Requires: pkgconfig
 Requires: systemd-devel
 Requires: glibc-headers
+%if "%{with_lustre}" == "--with-lustrs=yes"
 Requires: kernel-devel = %{kernel_ver_requires}
 Requires: %{lustre_devel}
+%endif
 
 
 %description devel
@@ -164,11 +171,11 @@ Header files that are required to link with CORTX Motr libraries.
 %if %{with ut}
 %package tests-ut
 Summary: CORTX Motr unit tests
-Group: Development/Kernel
+Group: Development
 Conflicts: %{name}
 
 %description tests-ut
-CORTX Motr unit tests (for kernel and user space).
+CORTX Motr unit tests (user space).
 %endif # with ut
 
 %prep
@@ -184,8 +191,13 @@ rm -rf %{buildroot}
 
 make DESTDIR=%{buildroot} install-tests
 
+%if "%{with_lustre}" == "--with-lustrs=yes"
 find %{buildroot} -name m0tr.ko -o -name m0ut.ko -o -name galois.ko \
 	     | sed -e 's#^%{buildroot}##' > tests-ut.files
+%else
+find %{buildroot} -name galois.ko \
+	     | sed -e 's#^%{buildroot}##' > tests-ut.files
+%endif
 
 find %{buildroot} \
         -name m0ut \
@@ -218,11 +230,12 @@ mkdir -p %{buildroot}%{_localstatedir}/motr
 
 %endif # with ut
 
+%if "%{with_lustre}" == "--with-lustrs=no"
 # Remove depmod output - it is regenerated during %post
 if [ -e %{buildroot}/lib/modules/%{raw_kernel_ver}/modules.dep ]; then
 	rm %{buildroot}/lib/modules/%{raw_kernel_ver}/modules.*
 fi
-
+%endif
 
 %files
 %if !%{with ut}
@@ -283,7 +296,9 @@ getent passwd motr >/dev/null || useradd --system --shell /sbin/nologin \
 # would be expanded at build-time.
 # See http://rpm.org/user_doc/scriptlet_expansion.html for more info.
 %post -e
+%if "%{with_lustre}" == "--with-lustrs=yes"
 /sbin/depmod -a
+%endif
 systemctl daemon-reload
 echo $(date) &> /var/log/motr-rpm-conf-update.log
 /usr/sbin/m0provision config &>> /var/log/motr-rpm-conf-update.log
@@ -300,7 +315,9 @@ if [ $1 -eq 2 ] ; then
 fi
 
 %postun
+%if "%{with_lustre}" == "--with-lustrs=yes"
 /sbin/depmod -a
+%endif
 systemctl daemon-reload
 
 %if %{with ut}
