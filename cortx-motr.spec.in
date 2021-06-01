@@ -230,12 +230,10 @@ mkdir -p %{buildroot}%{_localstatedir}/motr
 
 %endif # with ut
 
-%if "%{with_lustre}" == "--with-lustrs=no"
 # Remove depmod output - it is regenerated during %post
 if [ -e %{buildroot}/lib/modules/%{raw_kernel_ver}/modules.dep ]; then
 	rm %{buildroot}/lib/modules/%{raw_kernel_ver}/modules.*
 fi
-%endif
 
 %files
 %if !%{with ut}
