@@ -31,7 +31,7 @@ ha_config="/etc/sysconfig/m0d-${1#m0d-}"
 service="ha"
 ha_proxy=false
 mkfs_force=false
-mkfs_dir_present=true
+mkfs_dir_present=false
 confd_proxy="/etc/motr/confd.xc"
 
 
@@ -88,31 +88,43 @@ parse_cli_options()
 
 start_server()
 {
-    if [[ "$service" = "ios"* ]]; then
-        STOB_OPTS="-T AD"
-    fi
-    
-    $MOTR_SERVER "$1"
+    $MOTR_SERVER "m0d-$1"
 }
 
+update_local_ip()
+{
+    filename="$1"
+    IP=`ip addr show eth0|grep inet| head -1|awk '{print $2}'|cut -d '/' -f1`
+    sed -r 's/(\b[0-9]{1,3}\.){3}[0-9]{1,3}\b'/"$IP"/ $filename > temp
+    cp temp $filename 
+    rm temp
+}    
 #start of the program
 
 parse_cli_options "$@"
 echo "service $service"
 
+
+svc_tag=$(echo $service | cut -d ':' -f2)
+if [[ $svc_tag == "0x6" ]]; then
+    unset MOTR_HA_EP
+fi
+
+update_local_ip "$confd_proxy"
+ha_config="$MOTR_SYSCONFIG-$service"
+update_local_ip "$ha_config"
+
 ha_config="$MOTR_SYSCONFIG-$service"
 [[ -r $ha_config ]] && source $ha_config
 
-cat $ha_config
-MKFS_DIR="$MOTR_MKFS_DIR-$service/stobs"
-if [[ ! -d "$MKFS_DIR" ]]; then
-    mkfs_dir_present=false;
+MKFS_DIR="$MOTR_MKFS_DIR-$service/db/o"
+if [[ -d "$MKFS_DIR" ]]; then
+    mkfs_dir_present=true;
     echo "mkfs_dir_present $mkfs_dir_present"
 fi
 
 # starting the mkfs for each service ha, confd, ios
-if [[ "$mkfs_force" = "true" || "$mkfs_dir_present"="false" ]]; then
-    echo "mkfs_dir_present $mkfs_dir_present"
+if [[ "$mkfs_force" = "true" || "$mkfs_dir_present" = "false" ]]; then
     $MOTR_MKFS $service
 fi
 
