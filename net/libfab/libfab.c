@@ -2954,7 +2954,6 @@ static void libfab_buf_del(struct m0_net_buffer *nb)
 	       libfab_buf_invariant(buf));
 	nb->nb_flags |= M0_NET_BUF_CANCELLED;
 
-	M0_LOG(M0_ALWAYS, "Cancelled buf = %p nb = %p qype = %d", buf, nb, nb->nb_qtype);
 	if (buf->fb_state != FAB_BUF_QUEUED)
 		buf->fb_state = FAB_BUF_QUEUED;
 
