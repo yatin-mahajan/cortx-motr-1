@@ -33,6 +33,7 @@
 #include <stdlib.h>             /* atoi */
 #include <sys/epoll.h>          /* struct epoll_event */
 #include <unistd.h>             /* close */
+#include <netdb.h>	        /* hostent */
 #include "net/buffer_pool.h"    /* struct m0_net_buffer_pool */
 #include "net/net.h"            /* struct m0_net_domain */
 #include "lib/errno.h"          /* errno */
@@ -169,6 +170,70 @@ M0_INTERNAL int m0_net_libfab_init(void)
 M0_INTERNAL void m0_net_libfab_fini(void)
 {
 	m0_net_xprt_deregister(&m0_net_libfab_xprt);
+}
+
+static int libfab_hostname_to_ip(char *hostname , char* ip)
+{
+        struct hostent *hname;
+        struct in_addr **addr;
+        int i,n;
+        char *cp,name[25];
+	cp = strchr(hostname, ':');
+	if (cp == NULL)
+		return M0_ERR(-EINVAL);
+
+	n = cp - hostname;
+	memcpy(name,hostname,n);
+        name[n]='\0';
+#if 0
+        
+	char *cp, *name,*port;
+	M0_PRE(ep_name != NULL);
+ 
+	M0_ENTRY("ep_name=%s", ep_name);
+
+	name = (char *)ep_name + strlen("libfab:");
+
+	cp = strchr(name, ':');
+	if (cp == NULL)
+		return M0_ERR(-EINVAL);
+
+	n = cp - name;
+	if (n == 0 )
+		return M0_ERR(-EINVAL);
+        cp++;
+
+	memcpy(hname, name, n);
+	hname[n] = '\0';
+
+	n=strlen(cp);
+	memcpy(port, cp, n);
+	port[n] = '\0';
+#endif
+        M0_LOG(M0_ERROR, "gethostbyname error %s", (char *)name);
+        if ( (hname = gethostbyname( name ) ) == NULL)
+        {
+                // get the host info
+                M0_LOG(M0_ERROR, "gethostbyname error %s", (char *)name);
+                return M0_ERR(-EPROTO);
+        }
+
+        addr = (struct in_addr **) hname->h_addr_list;
+
+        for(i = 0; addr[i] != NULL; i++)
+        {
+                //Return the first one;
+                strcpy(ip , inet_ntoa(*addr[i]) );
+		n=strlen(ip);
+		return M0_RC(n);
+        }
+
+#if 0
+	memset(ep_name,0,sizeof(name);
+        memcpy(ep_name,"libfab:",7);
+        memcpy(ep_name[7],ip,sizeof(ip);
+#endif
+        return M0_ERR(-EPROTO);
 }
 
 /**
@@ -312,6 +377,7 @@ static int libfab_ep_addr_decode_native(const char *ep_name, char *node,
 {
 	char   *name;
 	char   *cp;
+	char    ip[LIBFAB_ADDR_LEN_MAX];
 	size_t  n;
 	int     rc = 0;
 
@@ -349,6 +415,10 @@ static int libfab_ep_addr_decode_native(const char *ep_name, char *node,
 	}
 
 	if ((nodeSize < (n+1)) || (portSize < (strlen(cp)+1)))
+		return M0_ERR(-EINVAL);
+
+	n = libfab_hostname_to_ip(name,ip);
+        if (n<0)
 		return M0_ERR(-EINVAL);
 
 	memcpy(node, name, n);

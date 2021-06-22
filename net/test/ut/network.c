@@ -152,15 +152,19 @@ void m0_net_test_network_ut_ping(void)
 	cfg.ntncfg_buf_ping_nr	 = 1;
 	cfg.ntncfg_ep_max	 = 1;
 	cfg.ntncfg_timeouts	 = m0_net_test_network_timeouts_never();
-	rc = m0_net_test_network_ctx_init(&send, &cfg, "0@lo:12345:42:1000");
+	//rc = m0_net_test_network_ctx_init(&send, &cfg, "0@lo:12345:42:1000");
+	rc = m0_net_test_network_ctx_init(&send, &cfg, "libfab:ssc-vm-2027.colo.seagate.com:1000");
 	M0_UT_ASSERT(rc == 0);
 
-	rc = m0_net_test_network_ctx_init(&recv, &cfg, "0@lo:12345:42:1001");
+	//rc = m0_net_test_network_ctx_init(&recv, &cfg, "0@lo:12345:42:1001");
+	rc = m0_net_test_network_ctx_init(&recv, &cfg, "libfab:ssc-vm-2027.colo.seagate.com:1001");
 	M0_UT_ASSERT(rc == 0);
 
-	rc = m0_net_test_network_ep_add(&send, "0@lo:12345:42:1001");
+	//rc = m0_net_test_network_ep_add(&send, "0@lo:12345:42:1001");
+	rc = m0_net_test_network_ep_add(&send, "libfab:ssc-vm-2027.colo.seagate.com:1001");
 	M0_UT_ASSERT(rc == 0);
-	rc = m0_net_test_network_ep_add(&recv, "0@lo:12345:42:1000");
+	//rc = m0_net_test_network_ep_add(&recv, "0@lo:12345:42:1000");
+	rc = m0_net_test_network_ep_add(&recv, "libfab:ssc-vm-2027.colo.seagate.com:1000");
 	M0_UT_ASSERT(rc == 0);
 
 	m0_semaphore_init(&recv_sem, 0);
