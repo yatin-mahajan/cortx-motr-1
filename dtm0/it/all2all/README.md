@@ -15,7 +15,7 @@ chain including Hare, m0d processes and client process
 works and client can write key/value pairs with DTX
 enabled.
 
-What the test does:
+What the test did initially:
 -   bootstraps the cluster of 3 m0d processes using Hare
 
 -   checks that no any handling of HA messages is done by
@@ -37,6 +37,14 @@ What the test does:
 
 -   waits for m0crate completion
 
+Although some of the code that did it is still preserved in the script,
+at this moment we execute a simplified version of the original script:
+-   bootstraps the cluster of 3 m0d processes using Hare
+
+-   run the m0crate to write key/value pairs
+
+-   waits for m0crate completion
+
 ## Command to run this test
 ```sh
 sudo ./all2all
@@ -45,12 +53,13 @@ sudo ./all2all
 ## Hare usage
 
 Hare is used for cluster bootstrap and shutdown. Firstly
-it needs to be patched by the hare.patch in current directory
+it needs to be cloned locally and switched to dtm-0 branch
 to make it able to generate clusted configuration that includes
-DTM0 service. First copy hare.patch file to the hare folder and run 
-following command from hare directory for applying patch.
+DTM0 service with required parameters.
 ```sh
-patch -p1 < hare.patch
+git clone git@github.com:Seagate/cortx-hare.git
+cd cortx-hare
+git checkout dtm-0
 ```
 After above step hare should be built and installed into the system 
 (see [README.md](https://github.com/Seagate/cortx-hare/blob/main/README.md) in the root of Hare repo).
