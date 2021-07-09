@@ -42,7 +42,7 @@ enum {
 
 
 /**
- * System process which dtm0 subscribes for state updates
+ * A sturcture to keep information about a remote DTM0 service.
  */
 struct dtm0_process {
 	/** Linkage to m0_dtm0_service::dos_processes. */
@@ -55,32 +55,20 @@ struct dtm0_process {
 	 */
 	struct m0_clink         dop_ha_link;
 	/**
-	 * Link connected to remote process
+	 * RPC link to be used to send messages to this process.
 	 */
 	struct m0_rpc_link      dop_rlink;
-	/**
-	 * Remote process fid
-	 */
+	/** Remote process fid. */
 	struct m0_fid           dop_rproc_fid;
-	/**
-	 * Remote service fid
-	 */
+	/** Remote DTM0 service fid. */
 	struct m0_fid           dop_rserv_fid;
-	/**
-	 * Remote process endpoint
-	 */
+	/** Remote process endpoint. */
 	char                   *dop_rep;
 	/**
-	 * Current dtm0 service dtm0 process to.
+	 * Protects dop_rlink from concurrent access from drlink FOMs.
+	 * See ::m0_dtm0_req_post.
 	 */
-	struct m0_reqh_service *dop_dtm0_service;
-	/** Protects ::dop_rlink from concurrent access from different FOMs. */
 	struct m0_long_lock     dop_llock;
-	/**
-	 * Connect ast
-	 */
-	struct m0_sm_ast        dop_service_connect_ast;
-	struct m0_clink         dop_service_connect_clink;
 };
 
 M0_INTERNAL int dtm0_process_init(struct dtm0_process    *proc,

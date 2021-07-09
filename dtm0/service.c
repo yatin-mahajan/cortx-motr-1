@@ -160,34 +160,11 @@ m0_dtm0_service_process_connect(struct m0_reqh_service *s,
 				const char             *remote_ep,
 				bool                    async)
 {
-	struct dtm0_process   *process;
-	struct m0_rpc_machine *mach =
-		m0_reqh_rpc_mach_tlist_head(&s->rs_reqh->rh_rpc_machines);
-	int                    rc;
-
-	process = dtm0_service_process__lookup(s, remote_srv);
-	if (process == NULL)
-		return M0_RC(-ENOENT);
-
-	rc = m0_rpc_link_init(&process->dop_rlink, mach, remote_srv,
-			      remote_ep, DTM0_MAX_RPCS_IN_FLIGHT);
-	if (rc != 0)
-		return M0_ERR(rc);
-
-	M0_LOG(M0_DEBUG, "async=%d, dtm0="FID_F", remote_srv="FID_F", rep=%s",
-	       !!async, FID_P(&s->rs_service_fid), FID_P(remote_srv),
-	       remote_ep);
-
-	if (async)
-		m0_rpc_link_connect_async(&process->dop_rlink,
-					  M0_TIME_NEVER,
-					  &process->dop_service_connect_clink,
-					  NULL);
-	else
-		rc = m0_rpc_link_connect_sync(&process->dop_rlink,
-					      M0_TIME_NEVER);
-
-	return M0_RC(rc);
+	/*
+	 * TODO: This function will eliminated once drlink gets
+	 * "synchronous" mode.
+	 */
+	M0_ASSERT_INFO(0, "Direct connect() call is not supported.");
 }
 
 static int dtm0_process_disconnect(struct dtm0_process *process)
@@ -463,7 +440,6 @@ M0_INTERNAL int dtm0_process_init(struct dtm0_process    *proc,
 	proc->dop_rserv_fid = rem_svc_conf->cs_obj.co_id;
 
 	proc->dop_rep = m0_strdup(rem_proc_conf->pc_endpoint);
-	proc->dop_dtm0_service = &dtms->dos_generic;
 
 	m0_long_lock_init(&proc->dop_llock);
 

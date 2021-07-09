@@ -214,7 +214,7 @@ static int find_or_add(struct m0_dtm0_service *dtms,
 		       struct dtm0_process   **out)
 {
 	struct dtm0_process *process;
-	int                  rc;
+	int                  rc = 0;
 
 	M0_ENTRY();
 	M0_PRE(m0_mutex_is_locked(&dtms->dos_generic.rs_mutex));

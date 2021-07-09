@@ -45,7 +45,7 @@ enum m0_dtm0s_msg {
 	DTM_EXECUTE,
 	DTM_EXECUTED,
 	DTM_PERSISTENT,
-	DMT_REDO
+	DTM_REDO
 } M0_XCA_ENUM;
 
 /** A DTM0 message sent as an RPC request to remote DTM0 services. */
