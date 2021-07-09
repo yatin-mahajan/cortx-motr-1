@@ -405,6 +405,10 @@ void rlut_connect_async(void)
 }
 
 /*
+ * This test case uses ::m0_co_op instead of ::m0_clink to await on completion
+ * of the internal connect/disconnect machinery. co_op is/will be used
+ * in the coroutine context (see M0_CO_FUN and so on).
+ *
  * NOTE: already tried to generalise rlut_connect_async() with no luck therefore
  * rlut_connect_async_op() was introduced.
  */
@@ -430,7 +434,8 @@ void rlut_connect_async_op(void)
 	m0_rpc_link_connect_async(rlink,
 				  m0_time_from_now(RLUT_SESS_TIMEOUT, 0),
 				  NULL, &op);
-	rc = m0_rpc_session_timedwait(&rlink->rlk_sess, M0_BITS(M0_RPC_SESSION_IDLE),
+	rc = m0_rpc_session_timedwait(&rlink->rlk_sess,
+				      M0_BITS(M0_RPC_SESSION_IDLE),
 				      M0_TIME_NEVER);
 	M0_UT_ASSERT(rc == 0);
 	ut_req(&rlink->rlk_sess, "M0_CST_IOS", M0_SERVICE_STATUS);
