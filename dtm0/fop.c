@@ -206,20 +206,6 @@ static size_t dtm0_fom_locality(const struct m0_fom *fom)
 	return locality++;
 }
 
-static int dtm0_req_post(struct m0_dtm0_service       *dtms,
-			 enum m0_dtm0s_msg             msg_type,
-			 const struct m0_dtm0_tx_desc *txd,
-			 const struct m0_fid          *tgt,
-			 struct m0_fom                *fom)
-{
-	return m0_dtm0_req_post(dtms,
-				&((struct dtm0_req_fop) {
-				  .dtr_msg = msg_type,
-				  .dtr_txr = *txd
-				  }),
-				tgt, fom, false);
-}
-
 M0_INTERNAL int m0_dtm0_logrec_update(struct m0_be_dtm0_log  *log,
 				      struct m0_be_tx        *tx,
 				      struct m0_dtm0_tx_desc *txd,
@@ -239,17 +225,26 @@ M0_INTERNAL int m0_dtm0_logrec_update(struct m0_be_dtm0_log  *log,
 M0_INTERNAL int m0_dtm0_on_committed(struct m0_fom            *fom,
 				     const struct m0_dtm0_tid *id)
 {
-	struct m0_dtm0_service *dtms = m0_dtm0_service_find(
-					fom->fo_service->rs_reqh);
-	struct m0_be_dtm0_log  *log = dtms->dos_log;
-	struct m0_dtm0_log_rec *rec;
-	struct m0_dtm0_tx_desc  txd;
-	struct m0_fid          *target;
-	struct m0_fid          *source = &dtms->dos_generic.rs_service_fid;
-	int                     rc;
-	int                     i;
+	struct m0_dtm0_service       *dtms;
+	struct m0_be_dtm0_log        *log;
+	const struct m0_dtm0_log_rec *rec;
+	const struct m0_fid          *target;
+	const struct m0_fid          *source;
+	struct dtm0_req_fop           req = { .dtr_msg = DTM_PERSISTENT };
+	struct m0_dtm0_tx_desc       *txd = &req.dtr_txr;
+	int                           rc;
+	int                           i;
 
+	dtms = m0_dtm0_service_find(fom->fo_service->rs_reqh);
+
+	/*
+	 * It is impossible to commit a transaction without DTM0 service up and
+	 * running.
+	 */
+	M0_PRE(dtms != NULL);
+	log = dtms->dos_log;
 	M0_PRE(log != NULL);
+	/* It is impossible to commit something on a volatile log. */
 	M0_PRE(log->dl_is_persistent);
 
 	M0_ENTRY();
@@ -257,35 +252,50 @@ M0_INTERNAL int m0_dtm0_on_committed(struct m0_fom            *fom,
 	m0_mutex_lock(&log->dl_lock);
 	/* Get the latest state of the log record. */
 	rec = m0_be_dtm0_log_find(log, id);
+	/*
+	 * It is impossible to commit a record that is not a part of the
+	 * DTM log.
+	 */
 	M0_ASSERT_INFO(rec != NULL, "Log record must be inserted into the log "
 		       "in cas_fom_tick().");
-	rc = m0_dtm0_tx_desc_copy(&rec->dlr_txd, &txd);
+	rc = m0_dtm0_tx_desc_copy(&rec->dlr_txd, txd);
 	m0_mutex_unlock(&log->dl_lock);
 
 	if (rc != 0)
 		goto out;
 
-	for (i = 0; i < txd.dtd_ps.dtp_nr; ++i) {
-		target = &txd.dtd_ps.dtp_pa[i].p_fid;
+	/*
+	 * We have to send N PERSISTENT messages once a local transaction
+	 * gets committed (where N == txd->dtd_ps.dtp_nr):
+	 *	N-1 to the other participants (except ourselves),
+	 *	1   to the originator (txd->dtd_id.dti_fid).
+	 */
+	source = &dtms->dos_generic.rs_service_fid;
+	for (i = 0; i < txd->dtd_ps.dtp_nr; ++i) {
+		target = &txd->dtd_ps.dtp_pa[i].p_fid;
 
-		/* Send it to the originator when we encounter ourselves. */
+		/*
+		 * Since we should not send Pmsg to ourselves, re-use this
+		 * iteration to send Pmsg to the originator.
+		 */
 		if (m0_fid_eq(target, source))
-			target = &txd.dtd_id.dti_fid;
+			target = &txd->dtd_id.dti_fid;
 
-		rc = dtm0_req_post(dtms, DTM_PERSISTENT, &txd, target, fom);
+		rc = m0_dtm0_req_post(dtms, &req, target, fom, false);
 		if (rc != 0) {
-			M0_ERR_INFO(rc, "Failed to send PERSISTENT msg "
-				    FID_F " -> " FID_F ".",
-				    FID_P(source), FID_P(target));
+			M0_LOG(M0_WARN, "Failed to send PERSISTENT msg "
+				    FID_F " -> " FID_F " (%d).",
+				    FID_P(source), FID_P(target), rc);
 			/*
-			 * Pmsg should not cause failures of the CAS/IOS FOM
-			 * that caused it.
+			 * If we have failed to send a Pmsg (for any reason),
+			 * it is still not a showstopper for the caller
+			 * because the transaction has already been committed.
 			 */
 			rc = 0;
 		}
 	}
 
-	m0_dtm0_tx_desc_fini(&txd);
+	m0_dtm0_tx_desc_fini(txd);
 
 out:
 	return M0_RC(rc);
@@ -350,6 +360,14 @@ static int dtm0_pmsg_fom_tick(struct m0_fom *fom)
 	return M0_RC(result);
 }
 
+/*
+ * TODO:
+ * EXECUTE/EXECUTED message is "under development", and it is not a part
+ * of the main DTM0 algorithm yet.
+ * Previously, it was used to send ping-pongs in the UT. Once DTM0 RPC link
+ * gets its version of m0_rpc_post_sync, this FOM tick will be used in the
+ * UT that sends ping-pongs between volatile and persistent DTM0 services.
+ */
 static int dtm0_emsg_fom_tick(struct m0_fom *fom)
 {
 	int                       result;
@@ -358,6 +376,10 @@ static int dtm0_emsg_fom_tick(struct m0_fom *fom)
 	int                       phase = m0_fom_phase(fom);
 	struct   m0_dtm0_service *svc = m0_dtm0_fom2service(fom);
 	const struct m0_fid      *tgt = &req->dtr_txr.dtd_id.dti_fid;
+	const struct dtm0_req_fop executed = {
+		.dtr_msg = DTM_EXECUTED,
+		.dtr_txr = req->dtr_txr,
+	};
 
 	M0_PRE(req->dtr_msg == DTM_EXECUTE);
 	M0_ASSERT_INFO(m0_dtm0_in_ut(), "Emsg cannot be used outside of UT.");
@@ -370,8 +392,8 @@ static int dtm0_emsg_fom_tick(struct m0_fom *fom)
 		M0_ASSERT(m0_fom_phase(fom) == M0_FOPH_DTM0_LOGGING);
 
 		if (m0_dtm0_is_a_persistent_dtm(fom->fo_service))
-			rep->dr_rc = dtm0_req_post(svc, DTM_EXECUTED,
-						   &req->dtr_txr, tgt, fom);
+			rep->dr_rc = m0_dtm0_req_post(svc, &executed, tgt, fom,
+						      false);
 		m0_fom_phase_set(fom, M0_FOPH_SUCCESS);
 		result = M0_FSO_AGAIN;
 	}
