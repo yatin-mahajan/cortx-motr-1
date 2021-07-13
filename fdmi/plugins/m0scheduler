@@ -222,7 +222,7 @@ def listen_on_command(command):
 
     print('Listening for FDMI events on:\n  {}'.format(command), file=sys.stderr)
     while True:
-        output, error = p.communicate()
+        output = p.stdout.readline()
         if output is not None:
             fid = "fid"
             record = output.decode("utf-8")
@@ -233,6 +233,7 @@ def listen_on_command(command):
         if rc is not None:
             print('Exiting because m0sched exited with:', file=sys.stderr)
             print('  error code = {}'.format(rc), file=sys.stderr)
+            _, error = p.communicate()
             if error is not None:
                 error = error.decode('utf-8')
             if error is not None and len(error) > 0:
