@@ -1035,7 +1035,7 @@ static int cas_dtm0_logrec_credit_add(struct m0_fom *fom0)
 
 	M0_ASSERT(rc > 0);
 
-	m0_be_dtm0_log_credit(M0_DTML_PERSISTENT,
+	m0_be_dtm0_log_credit(M0_DTML_EXECUTED,
 			      &cas_op(fom0)->cg_txd,
 			      &((struct m0_buf) { .b_nob = rc }),
 			      m0_fom_reqh(fom0)->rh_beseg,

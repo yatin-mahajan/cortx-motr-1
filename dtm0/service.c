@@ -254,6 +254,34 @@ static int dtm0_service_allocate(struct m0_reqh_service           **service,
 	return dtm0_service__alloc(service, stype, &dtm0_service_ops);
 }
 
+static int volatile_log_init(struct m0_dtm0_service *dtm0)
+{
+	int rc;
+
+	rc = m0_be_dtm0_log_alloc(&dtm0->dos_log);
+	if (rc == 0) {
+		rc = m0_be_dtm0_log_init(dtm0->dos_log, NULL,
+					 &dtm0->dos_clk_src, false);
+		if (rc != 0)
+			m0_be_dtm0_log_free(&dtm0->dos_log);
+	}
+	return rc;
+}
+
+static int persistent_log_init(struct m0_dtm0_service *dtm0)
+{
+	struct m0_reqh *reqh = dtm0->dos_generic.rs_reqh;
+
+	M0_PRE(reqh != NULL);
+
+	dtm0->dos_log = m0_reqh_lockers_get(reqh, m0_get()->i_dtm0_log_key);
+	/* 0type should create it during mkfs */
+	M0_ASSERT_INFO(dtm0->dos_log != NULL, "Forgot to do mkfs?");
+
+	return m0_be_dtm0_log_init(dtm0->dos_log, reqh->rh_beseg,
+			&dtm0->dos_clk_src, true);
+}
+
 static int dtm_service__origin_fill(struct m0_reqh_service *service)
 {
 	struct m0_conf_service *service_obj;
@@ -291,26 +319,13 @@ static int dtm_service__origin_fill(struct m0_reqh_service *service)
 			dtm0->dos_origin = DTM0_ON_PERSISTENT;
 	}
 
-	if (dtm0->dos_origin == DTM0_ON_PERSISTENT) {
-		dtm0->dos_log = m0_reqh_lockers_get(service->rs_reqh,
-						    m0_get()->i_dtm0_log_key);
-		M0_ASSERT(dtm0->dos_log != NULL);
-	}
-
 out:
-	rc = 0;
 	if (dtm0->dos_origin == DTM0_ON_VOLATILE)
-		rc = m0_be_dtm0_log_alloc(&dtm0->dos_log);
-
-	if (rc == 0) {
-		rc = m0_be_dtm0_log_init(
-			dtm0->dos_log,
-			service->rs_reqh->rh_beseg,
-			&dtm0->dos_clk_src,
-			dtm0->dos_origin == DTM0_ON_PERSISTENT);
-		if (rc != 0)
-			m0_be_dtm0_log_free(&dtm0->dos_log);
-	}
+		rc = volatile_log_init(dtm0);
+	else if (dtm0->dos_origin == DTM0_ON_PERSISTENT)
+		rc = persistent_log_init(dtm0);
+	else
+		rc = M0_ERR(-EINVAL);
 
 	return M0_RC_INFO(rc, "origin=%d", dtm0->dos_origin);
 }

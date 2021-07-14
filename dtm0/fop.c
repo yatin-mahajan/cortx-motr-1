@@ -21,6 +21,7 @@
 
 
 #define M0_TRACE_SUBSYSTEM M0_TRACE_SUBSYS_DTM0
+#include "lib/trace.h"         /* M0_LOG */
 #include "dtm0/fop.h"
 #include "dtm0/fop_xc.h"
 #include "dtm0/addb2.h"
@@ -32,7 +33,6 @@
 #include "lib/errno.h"
 #include "lib/memory.h"
 #include "lib/misc.h"          /* M0_IN() */
-#include "lib/trace.h"         /* M0_LOG */
 #include "reqh/reqh.h"         /* reqh::rh_beseg */
 #include "rpc/rpc_opcodes.h"   /* M0_DTM0_REP_OPCODE */
 
@@ -44,9 +44,6 @@ struct dtm0_fom {
 	struct m0_fom dtf_fom;
 };
 
-/*
-  Fom specific routines for corresponding fops.
- */
 static int dtm0_emsg_fom_tick(struct m0_fom *fom);
 static int dtm0_pmsg_fom_tick(struct m0_fom *fom);
 static int dtm0_fom_create(struct m0_fop *fop, struct m0_fom **out,
@@ -301,6 +298,12 @@ out:
 	return M0_RC(rc);
 }
 
+/*
+ * A FOM tick to handle a DTM0 PERSISTENT message (Pmsg).
+ * A group of Pmsgs is sent whenever a local transaction gets committed
+ * (see ::m0_dtm0_on_committed). This routine is the recipient of such
+ * messages.
+ */
 static int dtm0_pmsg_fom_tick(struct m0_fom *fom)
 {
 	int                       result;
@@ -361,6 +364,7 @@ static int dtm0_pmsg_fom_tick(struct m0_fom *fom)
 }
 
 /*
+ * A FOM tick to handle a DTM0 EXECUTE message (Emsg).
  * TODO:
  * EXECUTE/EXECUTED message is "under development", and it is not a part
  * of the main DTM0 algorithm yet.
