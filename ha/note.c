@@ -175,6 +175,14 @@ static void ha_state_accept(struct m0_confc         *confc,
 		       note->nv_note[i].no_state,
 		       obj, obj == NULL ? -1 : obj->co_status);
 		if (obj != NULL && obj->co_status == M0_CS_READY) {
+			if (m0_fid_tget(&note->nv_note[i].no_id) == 'r') {
+				obj->co_id = note->nv_note[i].no_id;
+				M0_LOG(M0_DEBUG,"Replacing "FID_F "with new \
+				       FID: "FID_F"State : %u",
+				       FID_P(&obj->co_id),
+				       FID_P(&note->nv_note[i].no_id),
+				       note->nv_note[i].no_state);
+			}
 			prev_ha_state = obj->co_ha_state;
 			obj->co_ha_state = note->nv_note[i].no_state;
 			if (!ignore_same_state ||

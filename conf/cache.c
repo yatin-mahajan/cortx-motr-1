@@ -106,7 +106,14 @@ M0_INTERNAL struct m0_conf_obj *
 m0_conf_cache_lookup(const struct m0_conf_cache *cache,
 		     const struct m0_fid *id)
 {
+        /*
+	 * For process fid different approach is taken to compare FID's
+	 * Specifically for process fid considering base fid only
+	 * (excluding counter bit) for comparison.
+	 */
 	return m0_tl_find(m0_conf_cache, obj, &cache->ca_registry,
+			 (m0_fid_tget(id) == 'r') ?
+			  m0_proc_fid_eq(&obj->co_id, id) :
 			  m0_fid_eq(&obj->co_id, id));
 }
 
