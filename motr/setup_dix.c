@@ -348,6 +348,8 @@ M0_INTERNAL int m0_cs_dix_setup(struct m0_motr *cctx)
  	 * Enable this logic once multiple DIX pvers available. 
          */ 
 	// M0_ASSERT(!pver->pv_is_dirty);
+	M0_LOG(M0_ALWAYS, "Skipped pv_dirty_assert, pver: "FID_F" pver: %s",
+			FID_P(&pver->pv_id), pver->pv_is_dirty ? "True":"False");
 	M0_ASSERT(pool_failed_devs_tlist_is_empty(
 					&pver->pv_pool->po_failed_devices));
 

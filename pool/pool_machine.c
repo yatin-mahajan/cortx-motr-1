@@ -784,6 +784,9 @@ M0_INTERNAL int m0_poolmach_state_transit(struct m0_poolmach       *pm,
 		m0_poolmach_event_list_dump_locked(pm);
 	}
 	pm->pm_pver->pv_is_dirty = state->pst_nr_failures > 0;
+	M0_LOG(M0_ALWAYS, FID_F "pver is dirty :%s",
+			FID_P(&pm->pm_pver->pv_id),
+			(pm->pm_pver->pv_is_dirty ? "True" : "false"));
 	/* Clear any dirty sns flags set during previous repair */
 	pm->pm_pver->pv_sns_flags = state->pst_nr_failures <=
 				    state->pst_max_device_failures ?

@@ -558,6 +558,8 @@ m0_pool_clean_pver_find(const struct m0_pool *pool)
 	struct m0_pool_version *pver;
 
 	m0_tl_for (pool_version, &pool->po_vers, pver) {
+		M0_LOG(M0_ALWAYS, "find pver, pver_is : %s",
+				pver->pv_is_dirty? "True" : "False");
 		if (!pver->pv_is_dirty)
 			return pver;
 	} m0_tl_endfor;
