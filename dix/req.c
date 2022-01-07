@@ -1626,6 +1626,7 @@ static void dix_rop_completed(struct m0_sm_group *grp, struct m0_sm_ast *ast)
 	bool                   del_phase2 = false;
 	struct m0_dix_cas_rop *cas_rop;
 	uint32_t                req_cnt = 0;
+	int                      rc = 0;
 	bool			cas_success = false;
 
 	(void)grp;
@@ -1641,16 +1642,15 @@ static void dix_rop_completed(struct m0_sm_group *grp, struct m0_sm_ast *ast)
 		 */
 		m0_tl_for (cas_rop, &rop->dg_cas_reqs, cas_rop) {
 			req_cnt++;
-			if (cas_rop->crp_creq.ccr_sm.sm_rc == 0)
+			rc = cas_rop->crp_creq.ccr_sm.sm_rc;
+			if (!cas_success && rc == 0)
 				cas_success = true;
-			if (cas_success) {
-				if (cas_rop->crp_creq.ccr_sm.sm_rc == 0)
-					dix_cas_rop_rc_update(cas_rop, 0);
-			} else {
-				if (req_cnt == rop->dg_cas_reqs_nr &&
-				    !cas_success)
-					dix_cas_rop_rc_update(cas_rop, 0);
-			}
+
+			if (cas_success && rc == 0)
+				dix_cas_rop_rc_update(cas_rop, 0);
+			else if (!cas_success && req_cnt == rop->dg_cas_reqs_nr)
+				dix_cas_rop_rc_update(cas_rop, 0);
+
 			m0_cas_req_fini(&cas_rop->crp_creq);
 		} m0_tl_endfor;
 
