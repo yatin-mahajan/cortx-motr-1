@@ -1625,39 +1625,27 @@ static void dix_rop_completed(struct m0_sm_group *grp, struct m0_sm_ast *ast)
 	struct m0_dix_rop_ctx *rop_del_phase2 = NULL;
 	bool                   del_phase2 = false;
 	struct m0_dix_cas_rop *cas_rop;
-	uint32_t                req_cnt = 0;
-	int                      rc = 0;
-	bool			cas_success = false;
 
 	(void)grp;
-
-	M0_LOG(M0_ALWAYS, "req_type = %d", req->dr_type);
 	if (req->dr_type == DIX_NEXT)
 		m0_dix_next_result_prepare(req);
-	else
+	else {
 		/*
-		 * Check return status of N cas request, if any one CAS
-		 * Request is success, we return success to client. For failed
-		 * request skipping to send rc_update() but if it is last request
-		 * and we do not found any success request reply so far then
-		 * do update rc_update() for last failed CAS request also.
+		 * Return success if there is atleast one successful CAS
+		 * request
 		 */
+		if (m0_tl_forall(cas_rop, cas_rop,
+				 &rop->dg_cas_reqs,
+				 cas_rop->crp_creq.ccr_sm.sm_rc != 0))
+			    dix_cas_rop_rc_update(cas_rop_tlist_tail(
+						  &rop->dg_cas_reqs), 0);
+
 		m0_tl_for (cas_rop, &rop->dg_cas_reqs, cas_rop) {
-			req_cnt++;
-			rc = cas_rop->crp_creq.ccr_sm.sm_rc;
-			M0_LOG(M0_ALWAYS, "req cnt = %u rc = %d", req_cnt, rc);
-			M0_LOG(M0_ALWAYS, "rop->dg_cas_reqs_nr= %"PRIu64,
-					rop->dg_cas_reqs_nr);
-			if (!cas_success && rc == 0)
-				cas_success = true;
-
-			if (cas_success && rc == 0)
+			if (cas_rop->crp_creq.ccr_sm.sm_rc == 0)
 				dix_cas_rop_rc_update(cas_rop, 0);
-			else if (!cas_success && req_cnt == rop->dg_cas_reqs_nr)
-				dix_cas_rop_rc_update(cas_rop, 0);
-
 			m0_cas_req_fini(&cas_rop->crp_creq);
 		} m0_tl_endfor;
+	}
 
 	if (req->dr_type == DIX_DEL &&
 	    dix_req_state(req) == DIXREQ_INPROGRESS)
@@ -2111,9 +2099,7 @@ static void dix_rop_failures_analyse(struct m0_dix_req *req)
 	uint32_t               i;
 	uint32_t               j;
 
-	M0_ENTRY();
 	for (i = 0; i < rop->dg_rec_ops_nr; i++) {
-		M0_LOG(M0_ALWAYS, "i : %d, rop->dg_rec_ops_nr : %u", i, rop->dg_rec_ops_nr);
 		rec_op = &rop->dg_rec_ops[i];
 		for (j = 0; j < rec_op->dgp_units_nr; j++) {
 			unit = &rec_op->dgp_units[j];
@@ -2137,7 +2123,6 @@ static void dix_rop_units_set(struct m0_dix_req *req)
 	uint32_t               i;
 	uint32_t               j;
 
-//	M0_ENTRY();
 	m0_rwlock_read_lock(&pm->pm_lock);
 
 	/*
@@ -2165,8 +2150,6 @@ static void dix_rop_units_set(struct m0_dix_req *req)
 	 */
 	if (pm->pm_pver->pv_is_dirty &&
 	    !pool_failed_devs_tlist_is_empty(&pool->po_failed_devices)) {
-		M0_LOG(M0_ALWAYS, "Inside this loop, pver is :"FID_F,
-				FID_P(&pm->pm_pver->pv_id));
 		if (ENABLE_DTM0)
 			M0_IMPOSSIBLE("DTM0 can not operate when permanently"
 				      " failed devices exist.");
