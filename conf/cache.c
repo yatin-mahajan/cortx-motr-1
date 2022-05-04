@@ -363,5 +363,40 @@ m0_conf_cache_pinned(const struct m0_conf_cache *cache)
 			  obj->co_nrefs != 0);
 }
 
+void m0_ha_add_dynamic_fid_to_confc(
+			struct m0_conf_cache    *cache,
+			struct m0_conf_obj      *base_obj,
+			const struct m0_ha_note *nv_note,
+			uint64_t                ignore_same_state)
+{
+	struct m0_conf_obj     *new_obj;
+        enum m0_ha_obj_state    prev_ha_state;
+	int                     rc;
+
+	M0_LOG(M0_ALWAYS, "Received fid: "FID_F" look up fid :"FID_F,
+		FID_P(&nv_note->no_id), FID_P(&base_obj->co_id));
+
+	if (m0_fid_tget(&nv_note->no_id) == 'r') {
+		rc = m0_confc_cache_add_process(cache, &nv_note->no_id,
+						base_obj, &new_obj);
+		M0_ASSERT(rc == 0);
+		new_obj->co_ha_state = nv_note->no_state;
+		prev_ha_state = base_obj->co_ha_state;
+		new_obj->co_status = M0_CS_READY;
+		/*
+		 * TODO: Need to decide on should we copy subscribers from
+		 * older to new objetct or broadcast on older object
+		 */
+		if (!ignore_same_state ||
+		    prev_ha_state != new_obj->co_ha_state)
+			m0_chan_broadcast(&new_obj->co_ha_chan);
+		M0_LOG(M0_ALWAYS,"Conf obj for dynamic FID"FID_F" added",
+		        FID_P(&nv_note->no_id));
+	} else if (m0_fid_tget(&nv_note->no_id) == 's') {
+		 rc = m0_confc_cache_add_service(cache, &nv_note->no_id,
+						 base_obj, &new_obj);
+		 M0_ASSERT(rc == 0);
+	}
+}
 /** @} conf_dlspec_cache */
 #undef M0_TRACE_SUBSYSTEM

@@ -51,6 +51,7 @@
 #include "ha/link.h"            /* m0_ha_link_send */
 #include "ha/ha.h"              /* m0_ha_send */
 #include "motr/ha.h"            /* m0_motr_ha */
+#include "conf/cache.h"
 
 /**
  * @see: confc_fop_release()
@@ -140,17 +141,18 @@ M0_INTERNAL void m0_ha_state_single_post(struct m0_ha_nvec *nvec)
 	m0_ha_msg_nvec_send(nvec, 0, false, M0_HA_NVEC_SET, NULL);
 }
 
-static void m0_ha_add_dynamic_fid_to_confc(
+#if 0
+void m0_ha_add_dynamic_fid_to_confc(
 			struct m0_conf_cache    *cache,
 			struct m0_conf_obj      *base_obj,
 			const struct m0_ha_note *nv_note,
-			uint64_t                 ignore_same_state)
+			uint64_t                ignore_same_state)
 {
 	struct m0_conf_obj     *new_obj;
         enum m0_ha_obj_state    prev_ha_state;
 	int                     rc;
 
-	M0_LOG(M0_DEBUG, "Received fid: "FID_F" look up fid :"FID_F,
+	M0_LOG(M0_ALWAYS, "Received fid: "FID_F" look up fid :"FID_F,
 		FID_P(&nv_note->no_id), FID_P(&base_obj->co_id));
 
 	if (m0_fid_tget(&nv_note->no_id) == 'r') {
@@ -167,7 +169,7 @@ static void m0_ha_add_dynamic_fid_to_confc(
 		if (!ignore_same_state ||
 		    prev_ha_state != new_obj->co_ha_state)
 			m0_chan_broadcast(&new_obj->co_ha_chan);
-		M0_LOG(M0_DEBUG,"Conf obj for dynamic FID"FID_F" added",
+		M0_LOG(M0_ALWAYS,"Conf obj for dynamic FID"FID_F" added",
 		        FID_P(&nv_note->no_id));
 	} else if (m0_fid_tget(&nv_note->no_id) == 's') {
 		 rc = m0_confc_cache_add_service(cache, &nv_note->no_id,
@@ -175,6 +177,7 @@ static void m0_ha_add_dynamic_fid_to_confc(
 		 M0_ASSERT(rc == 0);
 	}
 }
+#endif
 
 /**
  * Callback used in m0_ha_state_accept(). Updates HA states for particular confc

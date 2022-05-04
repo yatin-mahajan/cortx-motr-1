@@ -406,7 +406,14 @@ M0_INTERNAL uint64_t m0_ha_note_handler_add(struct m0_ha_note_handler *hnh,
 M0_INTERNAL void m0_ha_note_handler_signal(struct m0_ha_note_handler *hnh,
                                            struct m0_ha_nvec         *nvec_rep,
                                            uint64_t                   id);
+#if 0
 
+M0_INTERNAL void m0_ha_add_dynamic_fid_to_confc(
+			struct m0_conf_cache    *cache,
+			struct m0_conf_obj      *base_obj,
+			const struct m0_ha_note *nv_note,
+			uint64_t                 ignore_same_state);
+#endif
 M0_INTERNAL const char *m0_ha_state2str(enum m0_ha_obj_state state);
 
 /** @} end of ha-note group */

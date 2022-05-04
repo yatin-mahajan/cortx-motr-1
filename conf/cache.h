@@ -230,5 +230,10 @@ m0_conf_cache_pinned(const struct m0_conf_cache *cache);
  */
 enum { M0_CONF_PATH_MAX = 15 };
 
+void m0_ha_add_dynamic_fid_to_confc(
+			struct m0_conf_cache    *cache,
+			struct m0_conf_obj      *base_obj,
+			const struct m0_ha_note *nv_note,
+			uint64_t                ignore_same_state)
 /** @} conf_dfspec_cache */
 #endif /* __MOTR_CONF_CACHE_H__ */

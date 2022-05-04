@@ -726,7 +726,7 @@ static void rconfc_conf_full_load(struct m0_sm_group *grp,
 	struct m0_confc       *confc = &rconfc->rc_confc;
 	struct m0_conf_cache  *cache = &confc->cc_cache;
 
-	M0_ENTRY("rconfc = %p", rconfc);
+	M0_LOG(M0_ALWAYS, "rconfc = %p", rconfc);
 	rc = m0_conf_obj_find_lock(cache, &M0_CONF_ROOT_FID, &confc->cc_root) ?:
 	     m0_confc_root_open(confc, &root) ?:
 	     m0_conf_full_load(root);

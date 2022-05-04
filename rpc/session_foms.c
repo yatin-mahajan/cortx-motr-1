@@ -31,6 +31,11 @@
 #include "net/net.h"
 #include "rpc/rpc_internal.h"
 #include "reqh/reqh_service.h"
+#include "conf/helpers.h"     /* m0_conf_service_ep_is_known */
+#include "conf/obj_ops.h"     /* m0_conf_obj_get, m0_conf_obj_put */
+#include "conf/cache.h"       /* m0_conf_cache_lock, m0_conf_cache_unlock */
+#include "conf/confc.h"       /* m0_confc_is_inited */
+#include "ha/note.h"
 
 /**
    @addtogroup rpc_session
@@ -187,6 +192,9 @@ M0_INTERNAL int m0_rpc_fom_conn_establish_tick(struct m0_fom *fom)
 	struct m0_rpc_conn                   *est_conn;
 	struct m0_fid                        *uniq_fid;
 	static struct m0_fom_timeout         *fom_timeout = NULL;
+	struct m0_confc_cache                *cache;
+	struct m0_conf_obj                   *obj;
+//	uint64_t                              ignore_same_state = 1;
 	int                                   rc;
 
 	M0_ENTRY("fom: %p", fom);
@@ -213,9 +221,15 @@ M0_INTERNAL int m0_rpc_fom_conn_establish_tick(struct m0_fom *fom)
 		m0_fi_disable(__func__, "free-timer");
 	}
 
-	fop     = fom->fo_fop;
+	fop = fom->fo_fop;
+
 	request = m0_fop_data(fop);
 	M0_ASSERT(request != NULL);
+	if (request != NULL && request->rce_conf_fids.af_count != 0)
+		M0_LOG(M0_ALWAYS, "request received with fid : "FID_F,
+				FID_P(&request->rce_conf_fids.af_elems[0]));
+
+	cache = machine->rm_reqh->rh_rconfc.rc_confc.cc_cache;
 
 	fop_rep = fom->fo_rep_fop;
 	reply   = m0_fop_data(fop_rep);
@@ -272,7 +286,18 @@ M0_INTERNAL int m0_rpc_fom_conn_establish_tick(struct m0_fom *fom)
 		if (rc == 0) {
 			conn->c_sender_id = m0_rpc_id_generate(uniq_fid);
 			conn_state_set(conn, M0_RPC_CONN_ACTIVE);
+			obj = m0_conf_cache_lookup_dynamic(cache,
+					&request->rce_conf_fids.af_elems[0]);
+			if ((obj != NULL) &&
+			    !cache->ca_is_phony &&
+			    (!m0_fid_eq(&obj->co_id,
+			     &request->rce_conf_fids.af_elems[0]))) {
+				m0_ha_add_dynamic_fid_to_confc(cache, obj,
+					&request->rce_conf_fids.af_elems[0],
+					1 );
+			    }
 		}
+
 	}
 	if (rc == 0) {
 		session0 = m0_rpc_conn_session0(conn);
