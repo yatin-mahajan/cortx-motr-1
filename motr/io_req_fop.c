@@ -369,10 +369,9 @@ ref_dec:
 	else
 		tioreq->ti_parbytes += rbulk->rb_bytes;
 
-	M0_LOG(M0_INFO, "[%p] fop %p, Returned no of bytes = %llu, "
-	       "expected = %llu",
-	       ioo, &iofop->if_fop, (unsigned long long)actual_bytes,
-	       (unsigned long long)rbulk->rb_bytes);
+	M0_LOG(M0_INFO, "ioo=%p fop=%p expected=%llu returned=%llu rc=%d",
+	       ioo, &iofop->if_fop, (unsigned long long)rbulk->rb_bytes,
+	       (unsigned long long)actual_bytes, rc);
 
 	/* Drops reference on reply fop. */
 	m0_fop_put0_lock(&iofop->if_fop);
