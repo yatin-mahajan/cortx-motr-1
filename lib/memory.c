@@ -193,9 +193,14 @@ M0_INTERNAL void *m0_alloc_aligned(size_t size, unsigned shift)
 	alignment = max_type(size_t, 1 << shift, sizeof result);
 	M0_ASSERT(m0_is_po2(alignment));
 	result = m0_arch_alloc_aligned(alignment, size);
-	alloc_tail(result, size);
-	if (result != NULL)
+#if 1
+	if (result != NULL) {
+		m0_atomic64_add(&allocated, size);
+		m0_atomic64_add(&cumulative_alloc, size);
 		m0_arch_allocated_zero(result, size);
+	}
+#endif
+
 	return result;
 }
 M0_EXPORTED(m0_alloc_aligned);
