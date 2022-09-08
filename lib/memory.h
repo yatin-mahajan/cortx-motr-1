@@ -179,6 +179,7 @@ M0_INTERNAL int m0_dont_dump(void *p, size_t size);
  * Wrapper function over memmove.
  */
 M0_INTERNAL void m0_memmove(void *tgt, void *src, size_t size);
+M0_INTERNAL void m0_memory_print(void);
 /** @} end of memory group */
 #endif /* __MOTR_LIB_MEMORY_H__ */
 

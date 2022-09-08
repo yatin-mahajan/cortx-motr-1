@@ -37,12 +37,15 @@
 #include "lib/misc.h"   /* m0_round_down */
 
 enum { U_POISON_BYTE = 0x5f };
-
+#if 0
 #ifdef ENABLE_DEV_MODE
-#define DEV_MODE (true)
-#else
 #define DEV_MODE (false)
+#else
+#define DEV_MODE (true)
 #endif
+#endif
+
+#define DEV_MODE 1
 
 #ifdef ENABLE_FREE_POISON
 static void poison_before_free(void *data, size_t size)
@@ -104,8 +107,12 @@ static struct m0_atomic64 cumulative_free;
 
 static void alloc_tail(void *area, size_t size)
 {
+	size_t asize;
+
+//	M0_LOG(M0_ALWAYS, "Alloc tail entry");
 	if (DEV_MODE && area != NULL) {
-		size_t asize = m0_arch_alloc_size(area);
+//		M0_LOG(M0_ALWAYS, "Counting allocated");
+		asize = m0_arch_alloc_size(area);
 
 		m0_atomic64_add(&allocated, asize);
 		m0_atomic64_add(&cumulative_alloc, asize);
@@ -159,6 +166,7 @@ void m0_free(void *data)
 		poison_before_free(data, size);
 		m0_arch_free(data);
 	}
+
 }
 M0_EXPORTED(m0_free);
 
@@ -185,6 +193,7 @@ M0_INTERNAL void *m0_alloc_aligned(size_t size, unsigned shift)
 	alignment = max_type(size_t, 1 << shift, sizeof result);
 	M0_ASSERT(m0_is_po2(alignment));
 	result = m0_arch_alloc_aligned(alignment, size);
+	alloc_tail(result, size);
 	if (result != NULL)
 		m0_arch_allocated_zero(result, size);
 	return result;
@@ -195,6 +204,15 @@ M0_INTERNAL void m0_free_aligned(void *data, size_t size, unsigned shift)
 {
 	if (data != NULL) {
 		M0_PRE(m0_addr_is_aligned(data, shift));
+//		size_t size = m0_arch_alloc_size(data);
+
+                /* 5% of logs in m0trace log file is m0_free */
+		//M0_LOG(M0_DEBUG, "%p", data);
+
+		if (DEV_MODE) {
+			m0_atomic64_sub(&allocated, size);
+			m0_atomic64_add(&cumulative_free, size);
+		}
 		poison_before_free(data, size);
 		m0_arch_free_aligned(data, size, shift);
 	}
@@ -267,6 +285,15 @@ M0_INTERNAL void m0_memory_fini(void)
 	m0_arch_memory_fini();
 }
 
+M0_INTERNAL void m0_memory_print(void)
+{
+	M0_LOG(M0_ALWAYS, "allocated=%" PRIu64 " cumulative_alloc=%" PRIu64 " "
+	       "cumulative_free=%"PRIu64, m0_atomic64_get(&allocated),
+	       m0_atomic64_get(&cumulative_alloc),
+	       m0_atomic64_get(&cumulative_free));
+}
+
+#undef DEV_MODE
 #undef DEV_MODE
 #undef M0_TRACE_SUBSYSTEM
 
