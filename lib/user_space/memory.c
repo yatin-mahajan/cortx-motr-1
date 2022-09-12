@@ -85,6 +85,7 @@ void *m0_arch_alloc(size_t size)
 void m0_arch_free(void *data)
 {
 	free(data);
+	malloc_trim(0);
 }
 
 M0_INTERNAL void m0_memmove(void *tgt, void *src, size_t size)
@@ -105,6 +106,7 @@ M0_INTERNAL void *m0_arch_alloc_nz(size_t size)
 M0_INTERNAL void m0_arch_free_aligned(void *data, size_t size, unsigned shift)
 {
 	free(data);
+	malloc_trim(0);
 }
 
 M0_INTERNAL void *m0_arch_alloc_aligned(size_t alignment, size_t size)
